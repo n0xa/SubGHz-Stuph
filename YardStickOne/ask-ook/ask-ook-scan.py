@@ -27,7 +27,7 @@ def ConfigureD(d):
 	print " [-] ---------------------------------"
 	print " [-] Modulation: MOD_ASK_OOK"
 	print " [-] Start Frequency: ",frequency
-	print " [-] Baud Rate:",baudRate
+	print " [-] Baud Rate:",results.baudRate
 	print "[-] ---------------------------------"
 
 parser = argparse.ArgumentParser(description='Simple program to scan for ASK/OOK codes',version="YardStick One ASK/OOK Scanner 1.0 - by Noah Axon")
@@ -56,6 +56,8 @@ print "Scanning for ASK/OOK Remotes... Press <enter> to stop or <space> to unloc
 def isData():
     return select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
 
+tty.setcbreak(sys.stdin.fileno())
+
 def showStatus():
 	strength= 0 - ord(str(d.getRSSI()))
 	sigFound = "0"
@@ -66,7 +68,6 @@ def showStatus():
 		sys.stdout.write(" [FREQ LOCKED]")
 	sys.stdout.write("      ")
 	sys.stdout.flush()
-
 
 n1=dt.datetime.now()
 
