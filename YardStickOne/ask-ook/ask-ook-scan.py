@@ -11,6 +11,7 @@ import operator
 import datetime as dt
 import select
 import tty
+import termios
 
 keyLen = 0
 baudRate = 4800
@@ -56,6 +57,7 @@ print "Scanning for ASK/OOK Remotes... Press <enter> to stop or <space> to unloc
 def isData():
     return select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
 
+old_settings = termios.tcgetattr(sys.stdin)
 tty.setcbreak(sys.stdin.fileno())
 
 def showStatus():
@@ -120,6 +122,7 @@ while True:
 	except ChipconUsbTimeoutException:
 		pass
 
+termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 sortedKeys = sorted(allstrings, key=lambda k: len(allstrings[k]), reverse=True)
 
 if(len(sortedKeys) > 0):
