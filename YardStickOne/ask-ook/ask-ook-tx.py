@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # YardStick One ASK/OOK Scanner by Noah Axon
 # Based on prior work by @AndrewMohawk 
 import codecs
@@ -8,8 +8,8 @@ from rflib import *
 inputfile = ''
 outputfile = ''
 
-parser = argparse.ArgumentParser(description='Simple program to transmit ASK/OOK codes',version="YardStick One ASK/OOK Transmitter 1.0 - by Noah Axon")
-parser.add_argument('-f', action="store", default="433920000", dest="frequency",help='Default: 433920000 | Frequency to transmit on',type=long)
+parser = argparse.ArgumentParser(description='Simple program to transmit ASK/OOK codes')
+parser.add_argument('-f', action="store", default="433920000", dest="frequency",help='Default: 433920000 | Frequency to transmit on',type=int)
 parser.add_argument('-b', action="store", dest="baud",default=4800, help='Default: 4800 | Baudrate to Receive',type=int)
 parser.add_argument('-r', action="store", dest="repeat", default=15, help='Default: 15 | Number of times to repeat transmit',type=int)
 parser.add_argument('-d', action="store", dest="data", required=True, help='Default: nil | Hex data string to transmit')

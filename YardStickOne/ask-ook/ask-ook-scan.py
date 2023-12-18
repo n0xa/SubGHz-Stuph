@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # YardStick One ASK/OOK Scanner by Noah Axon
 # Based on prior work by @AndrewMohawk 
 import sys
@@ -11,6 +11,8 @@ import operator
 import datetime as dt
 import select
 import tty
+import termios
+import codecs
 
 keyLen = 0
 baudRate = 4800
@@ -23,18 +25,18 @@ def ConfigureD(d):
 	d.setMdmDRate(results.baudRate)
 	d.lowball()
 	
-	print "[+] Radio Config:"
-	print " [-] ---------------------------------"
-	print " [-] Modulation: MOD_ASK_OOK"
-	print " [-] Start Frequency: ",frequency
-	print " [-] Baud Rate:",results.baudRate
-	print "[-] ---------------------------------"
+	print("[+] Radio Config:")
+	print(" [-] ---------------------------------")
+	print(" [-] Modulation: MOD_ASK_OOK")
+	print(" [-] Start Frequency: ",frequency)
+	print(" [-] Baud Rate:",results.baudRate)
+	print("[-] ---------------------------------")
 
-parser = argparse.ArgumentParser(description='Simple program to scan for ASK/OOK codes',version="YardStick One ASK/OOK Scanner 1.0 - by Noah Axon")
-parser.add_argument('-fa', action="store", default="433000000", dest="startFreq",help='Default: 433000000 | Frequency to start scan at',type=long)
-parser.add_argument('-fb', action="store", default="434000000", dest="endFreq",  help='Default: 434000000 | Frequency to end scan at',type=long)
-parser.add_argument('-fs', action="store", default="50000", dest="stepFreq",     help='Default: 50000     | Frequency step for scanning',type=long)
-parser.add_argument('-ft', action="store", default="1000", dest="timeStepFreq",  help='Default: 1000ms    | Frequency step delay',type=long)
+parser = argparse.ArgumentParser(description='Simple program to scan for ASK/OOK codes')
+parser.add_argument('-fa', action="store", default="433000000", dest="startFreq",help='Default: 433000000 | Frequency to start scan at',type=int)
+parser.add_argument('-fb', action="store", default="434000000", dest="endFreq",  help='Default: 434000000 | Frequency to end scan at',type=int)
+parser.add_argument('-fs', action="store", default="50000", dest="stepFreq",     help='Default: 50000     | Frequency step for scanning',type=int)
+parser.add_argument('-ft', action="store", default="1000", dest="timeStepFreq",  help='Default: 1000ms    | Frequency step delay',type=int)
 parser.add_argument('-br', action="store", dest="baudRate",default=4800,         help='Default: 4800      | Baudrate to Receive',type=int)
 parser.add_argument('-p', action="store", dest="paddingZeros", default=15,       help='Default: 15 | Repeated zeros needed for pattern match',type=int)
 parser.add_argument('-ms', action="store", dest="minimumStrength", default=-80,  help='Default: -80dB | Minimum strength',type=int)
@@ -51,15 +53,16 @@ lens = dict()
 lockOnSignal = True
 lockedFreq = False
 
-print "Scanning for ASK/OOK Remotes... Press <enter> to stop or <space> to unlock and continue scanning"
+print("Scanning for ASK/OOK Remotes... Press <enter> to stop or <space> to unlock and continue scanning")
 
 def isData():
     return select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
 
+old_settings = termios.tcgetattr(sys.stdin)
 tty.setcbreak(sys.stdin.fileno())
 
 def showStatus():
-	strength= 0 - ord(str(d.getRSSI()))
+	strength= 0 - int.from_bytes(d.getRSSI(), "big")
 	sigFound = "0"
 	if(currFreq in allstrings):
 		sigFound = str(len(allstrings[currFreq]))
@@ -78,11 +81,11 @@ while True:
 			if (x == 3 or x == 10):
 				break
 			elif(x == 32):
-				print " unlocking";
+				print(" unlocking")
 				currFreq += results.stepFreq
 				lockedFreq = False
 		y, t = d.RFrecv(1)
-		sampleString=y.encode('hex')
+		sampleString=codecs.encode(y, 'hex').decode('utf-8')
 		# lets find all the zero's
 		showStatus();
 		zeroPadding = [match[0] for match in re.findall(r'((0)\2{25,})', sampleString)]
@@ -120,10 +123,11 @@ while True:
 	except ChipconUsbTimeoutException:
 		pass
 
+termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 sortedKeys = sorted(allstrings, key=lambda k: len(allstrings[k]), reverse=True)
 
 if(len(sortedKeys) > 0):
-	print "\nIdentified the following ASK/OOK Keys:"
+	print("\nIdentified the following ASK/OOK Keys:")
 	for var in range(len(sortedKeys)):
 		del sorted_lens
 		strings = allstrings[sortedKeys[var]]
@@ -168,13 +172,13 @@ if(len(sortedKeys) > 0):
 
 			keyLen = len(key_packed)
 			if keyLen > 0:
-				print "-----------"
-				print "[+] Key len:  ",keyLen,""
-				print "[+] Key:      ", key_packed.encode('hex')
-				print "[+] Freq:     ", str(sortedKeys[var-1])
+				print("-----------")
+				print("[+] Key len:  ",keyLen,"")
+				print("[+] Key:      ", codecs.encode(key_packed, 'hex').decode('utf-8'))
+				print("[+] Freq:     ", str(sortedKeys[var-1]))
 	sys.stdout.write("\nDone.\n")
 	 	
 else:
-	print "\n\nNo keys found :(\nbye."
+	print("\n\nNo keys found :(\nbye.")
 
 d.setModeIDLE()
